@@ -1,0 +1,33 @@
+# ==============================================================================
+# MID TRACK Backend Git Ignore Rules
+# ==============================================================================
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+*.tsbuildinfo
+
+# SQLite Database & Backups
+prisma/*.db
+prisma/*.db.backup
+prisma/dev.db
+prisma/dev.db.backup
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.db.backup
+
+# Generated Data Exports
+data/*.json
+data/sqlite_dump.json
+
+# Logs
+*.log

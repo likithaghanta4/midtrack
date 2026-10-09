@@ -1,0 +1,81 @@
+# ==============================================================================
+# MID TRACK – S.R.K.R. Engineering College Git Ignore Rules
+# ==============================================================================
+
+# 1. Environment & Secret Configuration Files
+.env
+.env.*
+!.env.example
+*.env
+*.env.local
+*.env.production
+*.env.development
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# 2. Databases, Backups, and Generated SQLite Dumps
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.db.backup
+*.sqlite
+*.sqlite3
+backend/prisma/*.db
+backend/prisma/*.db.backup
+backend/prisma/dev.db
+backend/prisma/dev.db.backup
+backend/data/*.json
+backend/data/sqlite_dump.json
+
+# 3. Real Student & Faculty Spreadsheets (FERPA / Privacy Compliance)
+*.xlsx
+*.xls
+*.csv
+2026-2027 staff list.xlsx
+rolllist.xlsx
+data/faculty/*.xlsx
+data/students/*.xlsx
+data/faculty/*
+data/students/*
+
+# 4. Dependency Directories
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# 5. Production Builds & TypeScript Outputs
+dist/
+build/
+backend/dist/
+frontend/dist/
+*.tsbuildinfo
+backend/*.tsbuildinfo
+frontend/*.tsbuildinfo
+
+# 6. Logs & Runtime Artifacts
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 7. Coverage & Testing Artifacts
+coverage/
+.nyc_output/
+
+# 8. OS & Editor Metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
