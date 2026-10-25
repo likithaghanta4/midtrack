@@ -36,7 +36,7 @@
   "author": "SRKR Engineering College",
   "license": "ISC",
   "dependencies": {
-    "@neondatabase/serverless": "^1.2.0",
+    "@neondatabase/serverless": "^0.10.4",
     "@prisma/adapter-neon": "^5.22.0",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",

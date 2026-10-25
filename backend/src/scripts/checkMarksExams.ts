@@ -1,4 +1,4 @@
-import { prisma } from '../config/prisma.js';
+import { prisma } from '../config/prisma';
 
 async function main() {
   const marks = await prisma.mark.findMany({
@@ -11,7 +11,7 @@ async function main() {
   });
   console.log('Sample marks count:', marks.length);
   for (const m of marks) {
-    console.log(`Student: ${m.student.regNo}, Subj: ${m.subject.subjectCode}, Exam: ${m.exam.examType} (Sem ${m.exam.semester}, Year: ${m.exam.academicYear})`);
+    console.log(`Student: ${m.student.registerNumber}, Subj: ${m.subject.subjectCode}, Exam: ${m.exam.examType} (Sem ${m.exam.semester}, Year: ${m.exam.academicYear})`);
   }
 
   // Count marks by exam academicYear
