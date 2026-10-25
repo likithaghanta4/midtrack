@@ -7,7 +7,7 @@ import { MarksEntryTab } from '../components/faculty/MarksEntryTab';
 import { MarksAnalyticsTab } from '../components/faculty/MarksAnalyticsTab';
 import { SessionalMarksTab } from '../components/faculty/SessionalMarksTab';
 import { PrintMarkSheetTab } from '../components/faculty/PrintMarkSheetTab';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 
 interface FacultyDashboardProps {
   user: AuthUserType;
@@ -74,6 +74,16 @@ export const FacultyDashboard: React.FC<FacultyDashboardProps> = ({ user, onLogo
             <Loader2 className="w-10 h-10 animate-spin text-[#146EF5]" />
             <p className="text-sm font-bold text-[#0A2566]">
               Loading S.R.K.R. Faculty Portal...
+            </p>
+          </div>
+        ) : sections.length === 0 ? (
+          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-slate-200 text-center max-w-xl mx-auto shadow-2xs space-y-4 my-8">
+            <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-extrabold text-[#0A2566]">No Active Semester Allocations</h3>
+            <p className="text-sm text-slate-600 leading-relaxed font-medium">
+              No subjects or sections have been assigned to you for the active semester. Please contact the Super Admin to configure your academic allocations.
             </p>
           </div>
         ) : (

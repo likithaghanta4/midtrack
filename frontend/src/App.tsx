@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User } from './types';
 import { authApi } from './services/api';
 import { Login } from './pages/Login';
+import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
 import { FacultyDashboard } from './pages/FacultyDashboard';
 import { StudentDashboard } from './pages/StudentDashboard';
 
@@ -49,12 +50,17 @@ export default function App() {
     );
   }
 
-  // 1. Logged-in Faculty Portal
+  // 1. Logged-in Super Admin Portal
+  if (currentUser && currentUser.role === 'SUPERADMIN') {
+    return <SuperAdminDashboard user={currentUser} onLogout={handleLogout} />;
+  }
+
+  // 2. Logged-in Faculty Portal
   if (currentUser && currentUser.role === 'FACULTY') {
     return <FacultyDashboard user={currentUser} onLogout={handleLogout} />;
   }
 
-  // 2. Logged-in Student Portal (Module 7)
+  // 3. Logged-in Student Portal (Module 7)
   if (currentUser && currentUser.role === 'STUDENT') {
     return <StudentDashboard user={currentUser} onLogout={handleLogout} />;
   }

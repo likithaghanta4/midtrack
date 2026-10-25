@@ -802,6 +802,21 @@ export const R23_CURRICULUM: R23Course[] = [
     "electiveGroup": "PE-I"
   },
   {
+    "courseCode": "B23OE3101",
+    "courseName": "Open Elective-I",
+    "category": "OE",
+    "l": 3,
+    "t": 0,
+    "p": 0,
+    "credits": 3,
+    "cie": 30,
+    "see": 70,
+    "totalMarks": 100,
+    "branch": "CSIT",
+    "year": 3,
+    "semester": 5
+  },
+  {
     "courseCode": "B23CT3201",
     "courseName": "Cryptography & Network Security",
     "category": "PC",
@@ -1092,6 +1107,21 @@ export const R23_CURRICULUM: R23Course[] = [
     "electiveGroup": "PE-III"
   },
   {
+    "courseCode": "B23OE3201",
+    "courseName": "Open Elective-II",
+    "category": "OE",
+    "l": 3,
+    "t": 0,
+    "p": 0,
+    "credits": 3,
+    "cie": 30,
+    "see": 70,
+    "totalMarks": 100,
+    "branch": "CSIT",
+    "year": 3,
+    "semester": 6
+  },
+  {
     "courseCode": "B23CD3101",
     "courseName": "Visual Design and Communication",
     "category": "PC",
@@ -1295,6 +1325,21 @@ export const R23_CURRICULUM: R23Course[] = [
     "semester": 5,
     "isElectiveChoice": true,
     "electiveGroup": "PE-I"
+  },
+  {
+    "courseCode": "B23OE3101",
+    "courseName": "Open Elective-I",
+    "category": "OE",
+    "l": 3,
+    "t": 0,
+    "p": 0,
+    "credits": 3,
+    "cie": 30,
+    "see": 70,
+    "totalMarks": 100,
+    "branch": "CSD",
+    "year": 3,
+    "semester": 5
   },
   {
     "courseCode": "B23CD3201",
@@ -1585,6 +1630,21 @@ export const R23_CURRICULUM: R23Course[] = [
     "semester": 6,
     "isElectiveChoice": true,
     "electiveGroup": "PE-III"
+  },
+  {
+    "courseCode": "B23OE3201",
+    "courseName": "Open Elective-II",
+    "category": "OE",
+    "l": 3,
+    "t": 0,
+    "p": 0,
+    "credits": 3,
+    "cie": 30,
+    "see": 70,
+    "totalMarks": 100,
+    "branch": "CSD",
+    "year": 3,
+    "semester": 6
   },
   {
     "courseCode": "B23CT4101",

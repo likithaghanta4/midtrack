@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Download, FileSpreadsheet, ChevronDown, Loader2, CheckCircle2, FlaskConical, BookOpen } from 'lucide-react';
+import { Download, FileSpreadsheet, ChevronDown, Loader2, CheckCircle2, FlaskConical, BookOpen, Globe } from 'lucide-react';
 import { SectionItem, SubjectItem, SessionalRecord, facultyApi } from '../../services/api';
 import { formatSectionLabel, getSemestersForSection } from '../../utils/academicYearHelper';
-import { isLabCourse } from '../../utils/r23Curriculum';
+import { isLabCourse, isOpenElectiveCourse } from '../../utils/r23Curriculum';
 import { downloadSessionalCSV } from '../../utils/pdfExportHelper';
 
 interface SessionalMarksTabProps {
@@ -34,9 +34,10 @@ export const SessionalMarksTab: React.FC<SessionalMarksTabProps> = ({
     }
   }, [selectedSection]);
 
-  // Current Subject & Lab check
+  // Current Subject & Lab/OE check
   const currentSubject = subjects.find((s) => s.id === selectedSubjectId);
   const isLab = currentSubject ? isLabCourse(currentSubject.subjectCode, currentSubject.subjectName) : false;
+  const isOE = currentSubject ? (isOpenElectiveCourse(currentSubject.subjectCode, currentSubject.subjectName) || currentSubject.isOpenElective || false) : false;
 
   // Load isolated subjects for section and semester
   useEffect(() => {
@@ -113,22 +114,40 @@ export const SessionalMarksTab: React.FC<SessionalMarksTabProps> = ({
         className={`text-white rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
           isLab
             ? 'bg-gradient-to-r from-[#1B1464] via-[#2E1065] to-[#7C3AED]'
+            : isOE
+            ? 'bg-gradient-to-r from-[#0A2566] via-[#1E3A8A] to-[#D97706]'
             : 'bg-gradient-to-r from-[#0A2566] to-[#146EF5]'
         }`}
       >
         <div>
           <span className="bg-amber-400 text-[#0A2566] text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-            {isLab ? 'Laboratory Evaluation Rule' : 'Autonomous Academic Rule'}
+            {isLab ? 'Laboratory Evaluation Rule' : isOE ? 'Open Elective Evaluation Scheme' : 'Autonomous Academic Rule'}
           </span>
           <h2 className="text-xl font-black mt-2 font-['Outfit'] tracking-tight flex items-center gap-2">
-            {isLab ? <FlaskConical className="w-5 h-5 text-purple-300" /> : <BookOpen className="w-5 h-5 text-blue-300" />}
-            {isLab ? 'Laboratory Single Internal Marks Engine' : 'Final Sessional Calculation Engine (80:20)'}
+            {isLab ? (
+              <FlaskConical className="w-5 h-5 text-purple-300" />
+            ) : isOE ? (
+              <Globe className="w-5 h-5 text-amber-300" />
+            ) : (
+              <BookOpen className="w-5 h-5 text-blue-300" />
+            )}
+            {isLab
+              ? 'Laboratory Single Internal Marks Engine'
+              : isOE
+              ? 'Open Elective (OE) Sessional Marks Engine'
+              : 'Final Sessional Calculation Engine (80:20)'}
           </h2>
           <p className="text-xs text-blue-100 mt-1 max-w-xl">
             {isLab ? (
               <>
                 For Laboratory / Practical courses, internal marks (Max 30) are based directly on the
                 <span className="font-bold text-white ml-1">Single Internal Examination score (No 80:20 calculation needed)</span>.
+              </>
+            ) : isOE ? (
+              <>
+                For Open Elective (OE) courses, sessional marks can be entered directly as
+                <span className="font-bold text-white ml-1">Total Sessional Marks</span>, or computed dynamically via the
+                <span className="font-bold text-white ml-1">80:20 formula</span> if Mid-1 & Mid-2 are both entered.
               </>
             ) : (
               <>
@@ -143,10 +162,10 @@ export const SessionalMarksTab: React.FC<SessionalMarksTabProps> = ({
 
         <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/20 text-center font-mono text-xs">
           <p className="text-blue-200 text-[10px] font-bold">
-            {isLab ? 'DIRECT EVALUATION' : 'WEIGHTED FORMULA'}
+            {isLab ? 'DIRECT EVALUATION' : isOE ? 'OE EVALUATION SCHEME' : 'WEIGHTED FORMULA'}
           </p>
           <p className="font-black text-white text-sm mt-0.5">
-            {isLab ? 'S = Lab Internal (100%)' : 'S = (M_High × 0.8) + (M_Low × 0.2)'}
+            {isLab ? 'S = Lab Internal (100%)' : isOE ? 'S = Direct Total or (M_H×0.8 + M_L×0.2)' : 'S = (M_High × 0.8) + (M_Low × 0.2)'}
           </p>
         </div>
       </div>
@@ -213,7 +232,11 @@ export const SessionalMarksTab: React.FC<SessionalMarksTabProps> = ({
               >
                 {subjects.map((sub) => (
                   <option key={sub.id} value={sub.id}>
-                    {isLabCourse(sub.subjectCode, sub.subjectName) ? '🔬 [LAB] ' : '📖 '}
+                    {isLabCourse(sub.subjectCode, sub.subjectName)
+                      ? '🔬 [LAB] '
+                      : isOpenElectiveCourse(sub.subjectCode, sub.subjectName)
+                      ? '🌐 [OE] '
+                      : '📖 '}
                     {sub.subjectCode} - {sub.subjectName}
                   </option>
                 ))}

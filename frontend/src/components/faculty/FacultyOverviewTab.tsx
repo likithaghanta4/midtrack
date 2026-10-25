@@ -93,7 +93,7 @@ export const FacultyOverviewTab: React.FC<FacultyOverviewTabProps> = ({
             </p>
           </div>
           <span className="bg-[#F0F6FD] text-[#146EF5] text-xs font-bold px-3 py-1.5 rounded-xl border border-blue-100 self-start sm:self-auto">
-            Academic Year: 2025-2026
+            Academic Year: {statsData?.academicYear || '2026-2027'}
           </span>
         </div>
 

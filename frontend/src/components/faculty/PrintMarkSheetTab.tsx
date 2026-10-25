@@ -5,6 +5,7 @@ import { User as AuthUserType } from '../../types';
 import { formatSectionLabel, getSemestersForSection } from '../../utils/academicYearHelper';
 import { markToWords, getSRKRClassSem } from '../../utils/marksWordHelper';
 import { downloadElementAsPDF, viewElementPDFInNewTab, openNativePrintPDF, saveCsvWithNativeDialog } from '../../utils/pdfExportHelper';
+import { isOpenElectiveCourse } from '../../utils/r23Curriculum';
 
 interface PrintMarkSheetTabProps {
   user: AuthUserType;
@@ -182,6 +183,7 @@ export const PrintMarkSheetTab: React.FC<PrintMarkSheetTabProps> = ({
   }, [selectedSection, selectedSubjectId, selectedSheetType, exams, subjects]);
 
   const currentSubject = subjects.find((s) => s.id === selectedSubjectId);
+  const isOESubject = !!(currentSubject?.isOpenElective || isOpenElectiveCourse(currentSubject?.subjectCode, currentSubject?.subjectName));
   const classSemString = selectedSection ? getSRKRClassSem(selectedSection.semester) : 'III B.TECH - II';
   const branchString = selectedSection?.branch || 'CSIT';
   const sectionLetter = selectedSection?.sectionName.replace(/^(24|25)\s*/, '') || 'A';
@@ -361,11 +363,14 @@ export const PrintMarkSheetTab: React.FC<PrintMarkSheetTabProps> = ({
                 onChange={(e) => setSelectedSubjectId(e.target.value)}
                 className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#146EF5]"
               >
-                {subjects.map((sub) => (
-                  <option key={sub.id} value={sub.id}>
-                    {sub.subjectCode} - {sub.subjectName}
-                  </option>
-                ))}
+                {subjects.map((sub) => {
+                  const isOE = sub.isOpenElective || isOpenElectiveCourse(sub.subjectCode, sub.subjectName);
+                  return (
+                    <option key={sub.id} value={sub.id}>
+                      {isOE ? '🌐 [OE] ' : ''}{sub.subjectCode} - {sub.subjectName}
+                    </option>
+                  );
+                })}
               </select>
               <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
             </div>
@@ -514,6 +519,8 @@ export const PrintMarkSheetTab: React.FC<PrintMarkSheetTabProps> = ({
                     <div className="text-[11px] font-black uppercase text-black tracking-wider mt-0.5 border-t border-black/50 pt-0.5">
                       {isLabSubject
                         ? 'STATEMENT OF LABORATORY SESSIONAL MARKS (100% DIRECT INTERNAL EVALUATION)'
+                        : isOESubject
+                        ? 'STATEMENT OF OPEN ELECTIVE SESSIONAL MARKS'
                         : selectedSheetType.includes('SESSIONAL')
                         ? 'STATEMENT OF SESSIONAL MARKS (80:20 WEIGHTED FORMULA)'
                         : `${selectedSheetType === 'MID_1' ? 'MID-1' : 'MID-2'} EXAMINATION MARKS STATEMENT`}
@@ -545,6 +552,11 @@ export const PrintMarkSheetTab: React.FC<PrintMarkSheetTabProps> = ({
                     {isLabSubject && (
                       <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-bold rounded">
                         LAB COURSE
+                      </span>
+                    )}
+                    {isOESubject && (
+                      <span className="ml-2 px-1.5 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-bold rounded">
+                        OPEN ELECTIVE
                       </span>
                     )}
                   </td>

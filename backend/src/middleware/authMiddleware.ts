@@ -5,7 +5,7 @@ import { prisma } from '../config/prisma';
 export interface AuthUser {
   id: string;
   username: string;
-  role: 'FACULTY' | 'STUDENT';
+  role: 'SUPERADMIN' | 'FACULTY' | 'STUDENT';
   name: string;
   facultyProfile?: {
     id: string;
@@ -69,14 +69,21 @@ export const requireAuth = async (
       return;
     }
 
-    const name = user.role === 'FACULTY' 
-      ? (user.facultyProfile?.name || user.username)
-      : (user.studentProfile?.name || user.username);
+    const effectiveRole = payload.role || (user.role as 'SUPERADMIN' | 'FACULTY' | 'STUDENT');
+
+    let name = user.username;
+    if (effectiveRole === 'SUPERADMIN') {
+      name = user.facultyProfile?.name ? `${user.facultyProfile.name} (Super Admin)` : 'Super Administrator';
+    } else if (effectiveRole === 'FACULTY') {
+      name = user.facultyProfile?.name || user.username;
+    } else if (effectiveRole === 'STUDENT') {
+      name = user.studentProfile?.name || user.username;
+    }
 
     req.user = {
       id: user.id,
       username: user.username,
-      role: user.role as 'FACULTY' | 'STUDENT',
+      role: effectiveRole,
       name,
       facultyProfile: user.facultyProfile,
       studentProfile: user.studentProfile,
@@ -91,7 +98,7 @@ export const requireAuth = async (
   }
 };
 
-export const requireRole = (allowedRole: 'FACULTY' | 'STUDENT') => {
+export const requireRole = (allowedRole: 'SUPERADMIN' | 'FACULTY' | 'STUDENT' | ('SUPERADMIN' | 'FACULTY' | 'STUDENT')[]) => {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({
@@ -101,7 +108,8 @@ export const requireRole = (allowedRole: 'FACULTY' | 'STUDENT') => {
       return;
     }
 
-    if (req.user.role !== allowedRole) {
+    const allowed = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
+    if (!allowed.includes(req.user.role)) {
       res.status(403).json({
         success: false,
         message: 'Access denied.',
@@ -112,3 +120,6 @@ export const requireRole = (allowedRole: 'FACULTY' | 'STUDENT') => {
     next();
   };
 };
+
+export const requireSuperAdmin = requireRole('SUPERADMIN');
+

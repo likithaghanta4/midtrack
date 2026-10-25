@@ -71,6 +71,7 @@ const SUBJECTS_DATA = [
   { subjectCode: 'B23CT3104', subjectName: 'PE-I: No SQL', branch: 'CSIT', semester: 5 },
   { subjectCode: 'B23CD3107', subjectName: 'PE-I: Artificial Intelligence', branch: 'CSIT', semester: 5 },
   { subjectCode: 'B23CT3105', subjectName: 'PE-I: MOOCS-I', branch: 'CSIT', semester: 5 },
+  { subjectCode: 'B23OE3101', subjectName: 'Open Elective-I', branch: 'CSIT', semester: 5 },
 
   // --- 3rd Year Sem 1 / III-I (CSD) -> SEMESTER 5 ---
   { subjectCode: 'B23CD3101', subjectName: 'Visual Design and Communication', branch: 'CSD', semester: 5 },
@@ -86,6 +87,7 @@ const SUBJECTS_DATA = [
   { subjectCode: 'B23CD3106', subjectName: 'PE-I: Internet of Things', branch: 'CSD', semester: 5 },
   { subjectCode: 'B23CD3107', subjectName: 'PE-I: Artificial Intelligence', branch: 'CSD', semester: 5 },
   { subjectCode: 'B23CD3108', subjectName: 'PE-I: MOOCS-I', branch: 'CSD', semester: 5 },
+  { subjectCode: 'B23OE3101', subjectName: 'Open Elective-I', branch: 'CSD', semester: 5 },
 
   // --- 3rd Year Sem 2 / III-II (CSIT) -> SEMESTER 6 ---
   { subjectCode: 'B23CT3201', subjectName: 'Cryptography & Network Security', branch: 'CSIT', semester: 6 },
@@ -106,6 +108,7 @@ const SUBJECTS_DATA = [
   { subjectCode: 'B23CT3208', subjectName: 'PE-III: Distributed Systems', branch: 'CSIT', semester: 6 },
   { subjectCode: 'B23CT3209', subjectName: 'PE-III: Information Retrieval System', branch: 'CSIT', semester: 6 },
   { subjectCode: 'B23CT3210', subjectName: 'PE-III: MOOCS-III', branch: 'CSIT', semester: 6 },
+  { subjectCode: 'B23OE3201', subjectName: 'Open Elective-II', branch: 'CSIT', semester: 6 },
 
   // --- 3rd Year Sem 2 / III-II (CSD) -> SEMESTER 6 ---
   { subjectCode: 'B23CD3201', subjectName: 'Automata Theory and Compiler Design', branch: 'CSD', semester: 6 },
@@ -126,6 +129,7 @@ const SUBJECTS_DATA = [
   { subjectCode: 'B23CD3211', subjectName: 'PE-III: Augmented Reality and Virtual Reality', branch: 'CSD', semester: 6 },
   { subjectCode: 'B23CD3212', subjectName: 'PE-III: Computer Graphics & Animation', branch: 'CSD', semester: 6 },
   { subjectCode: 'B23CD3213', subjectName: 'PE-III: MOOCS-III', branch: 'CSD', semester: 6 },
+  { subjectCode: 'B23OE3201', subjectName: 'Open Elective-II', branch: 'CSD', semester: 6 },
 
   // =========================================================================
   // 3. 4TH YEAR (IV B.TECH — R23 REGULATION) — STRICTLY SEMESTERS 7 & 8

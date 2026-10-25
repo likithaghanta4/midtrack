@@ -804,6 +804,21 @@ export const R23_CURRICULUM_DATA: R23CourseStructure[] = [
     "electiveGroup": "PE-I"
   },
   {
+    "courseCode": "B23OE3101",
+    "courseName": "Open Elective-I",
+    "category": "OE",
+    "l": 3,
+    "t": 0,
+    "p": 0,
+    "credits": 3,
+    "cie": 30,
+    "see": 70,
+    "totalMarks": 100,
+    "branch": "CSIT",
+    "year": 3,
+    "semester": 5
+  },
+  {
     "courseCode": "B23CT3201",
     "courseName": "Cryptography & Network Security",
     "category": "PC",
@@ -1094,6 +1109,21 @@ export const R23_CURRICULUM_DATA: R23CourseStructure[] = [
     "electiveGroup": "PE-III"
   },
   {
+    "courseCode": "B23OE3201",
+    "courseName": "Open Elective-II",
+    "category": "OE",
+    "l": 3,
+    "t": 0,
+    "p": 0,
+    "credits": 3,
+    "cie": 30,
+    "see": 70,
+    "totalMarks": 100,
+    "branch": "CSIT",
+    "year": 3,
+    "semester": 6
+  },
+  {
     "courseCode": "B23CD3101",
     "courseName": "Visual Design and Communication",
     "category": "PC",
@@ -1297,6 +1327,21 @@ export const R23_CURRICULUM_DATA: R23CourseStructure[] = [
     "semester": 5,
     "isElectiveChoice": true,
     "electiveGroup": "PE-I"
+  },
+  {
+    "courseCode": "B23OE3101",
+    "courseName": "Open Elective-I",
+    "category": "OE",
+    "l": 3,
+    "t": 0,
+    "p": 0,
+    "credits": 3,
+    "cie": 30,
+    "see": 70,
+    "totalMarks": 100,
+    "branch": "CSD",
+    "year": 3,
+    "semester": 5
   },
   {
     "courseCode": "B23CD3201",
@@ -1587,6 +1632,21 @@ export const R23_CURRICULUM_DATA: R23CourseStructure[] = [
     "semester": 6,
     "isElectiveChoice": true,
     "electiveGroup": "PE-III"
+  },
+  {
+    "courseCode": "B23OE3201",
+    "courseName": "Open Elective-II",
+    "category": "OE",
+    "l": 3,
+    "t": 0,
+    "p": 0,
+    "credits": 3,
+    "cie": 30,
+    "see": 70,
+    "totalMarks": 100,
+    "branch": "CSD",
+    "year": 3,
+    "semester": 6
   },
   {
     "courseCode": "B23CT4101",
@@ -2237,5 +2297,25 @@ export const isLabCourse = (courseCode?: string, courseName?: string): boolean =
     'B23CT4112', 'B23CT4113', 'B23CD4109', 'B23CD4110'
   ];
   return labCodes.includes(code);
+};
+
+export const isOpenElectiveCourse = (courseCode?: string, courseName?: string): boolean => {
+  const code = (courseCode || '').toUpperCase().trim();
+  const name = (courseName || '').toLowerCase().trim();
+
+  if (code.includes('OE') || code.startsWith('B23OE')) {
+    return true;
+  }
+
+  if (
+    name.includes('open elective') ||
+    name.startsWith('oe-') ||
+    name.startsWith('oe ') ||
+    name.includes('(oe')
+  ) {
+    return true;
+  }
+
+  return false;
 };
 

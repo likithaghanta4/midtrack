@@ -7,6 +7,7 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || 'srkr_midtrack_super_secure_jwt_secret_key_2026',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   facultyInitialPassword: process.env.FACULTY_INITIAL_PASSWORD || 'admin@123',
+  superAdminInitialPassword: process.env.SUPERADMIN_INITIAL_PASSWORD || 'superadmin@123',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   databaseUrl: process.env.DATABASE_URL || 'file:./dev.db'
 };

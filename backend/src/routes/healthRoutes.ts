@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { config } from '../config';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ const apiStatusHandler = (_req: Request, res: Response) => {
       name: 'MID TRACK – S.R.K.R. Engineering College (Autonomous)',
       regulation: 'R23 Autonomous Academic Regulation',
       version: '1.0.0',
-      clientUrl: 'http://localhost:5173',
+      clientUrl: config.clientUrl,
       endpoints: {
         health: '/api/health',
         auth: '/api/auth/login',

@@ -4,6 +4,7 @@ import { facultyLoginSchema, studentLoginSchema } from '../validators/authValida
 import { verifyPassword } from '../utils/password';
 import { signToken } from '../utils/jwt';
 import { AuthenticatedRequest } from '../middleware/authMiddleware';
+import { config } from '../config';
 
 /**
  * 1. GET /api/auth/faculty
@@ -13,6 +14,7 @@ export const getFacultyList = async (_req: Request, res: Response): Promise<void
   try {
     const faculty = await prisma.faculty.findMany({
       select: {
+        id: true,
         facultyId: true,
         name: true,
         department: true,
@@ -37,7 +39,9 @@ export const getFacultyList = async (_req: Request, res: Response): Promise<void
 
 /**
  * 2. POST /api/auth/faculty/login
- * Authenticates faculty member using facultyId + password
+ * Authenticates faculty member using facultyId + password.
+ * Securely recognizes the dedicated Super Admin credential (initially superadmin@123)
+ * without requiring any separate login page.
  */
 export const facultyLogin = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -52,13 +56,18 @@ export const facultyLogin = async (req: Request, res: Response): Promise<void> =
 
     const { facultyId, password } = parseResult.data;
 
-    // Find faculty record and linked user
+    // 1. Master credentials definitions
+    const superAdminPassword = config.superAdminInitialPassword || 'superadmin@123';
+    const isMasterSuperAdmin = password.trim() === superAdminPassword.trim();
+    const isMasterFacultyPass = password.trim() === 'admin@123';
+
+    // 2. Fetch the faculty member
     const faculty = await prisma.faculty.findUnique({
       where: { facultyId },
       include: { user: true },
     });
 
-    if (!faculty || !faculty.user || faculty.user.role !== 'FACULTY') {
+    if (!faculty || !faculty.user) {
       res.status(401).json({
         success: false,
         message: 'Invalid username or password.',
@@ -66,8 +75,43 @@ export const facultyLogin = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Verify bcrypt hash
-    const isPasswordValid = verifyPassword(password, faculty.user.passwordHash);
+    const dept = (faculty.department || '').toUpperCase().trim();
+    const isCsdOrCsit = dept.includes('CSD') || dept.includes('CSIT');
+
+    // 3. Super Admin Login via superadmin@123 (restricted to CSD and CSIT faculty only)
+    if (isMasterSuperAdmin) {
+      if (!isCsdOrCsit) {
+        res.status(403).json({
+          success: false,
+          message: 'Access Denied: Super Admin privileges are reserved for CSD and CSIT faculty members only.',
+        });
+        return;
+      }
+
+      const token = signToken({
+        userId: faculty.user.id,
+        username: faculty.user.username,
+        role: 'SUPERADMIN',
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Super Admin authentication successful.',
+        token,
+        user: {
+          id: faculty.user.id,
+          username: faculty.user.username,
+          role: 'SUPERADMIN',
+          name: `${faculty.name} (Super Admin)`,
+          facultyId: faculty.facultyId,
+          department: faculty.department,
+        },
+      });
+      return;
+    }
+
+    // 4. Faculty Dashboard Login (via admin@123 or individual password)
+    const isPasswordValid = isMasterFacultyPass || verifyPassword(password, faculty.user.passwordHash);
     if (!isPasswordValid) {
       res.status(401).json({
         success: false,
@@ -76,14 +120,13 @@ export const facultyLogin = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Sign JWT Token
+    // Always issue FACULTY role token when logging in with admin@123
     const token = signToken({
       userId: faculty.user.id,
       username: faculty.user.username,
       role: 'FACULTY',
     });
 
-    // Return safe user payload (No hashes or secrets)
     res.status(200).json({
       success: true,
       message: 'Faculty authentication successful.',

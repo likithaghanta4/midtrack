@@ -2,7 +2,8 @@
 // Relational Database Schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -39,6 +40,7 @@ model Faculty {
 
   // Relations
   marksEntered Mark[]
+  allocations  FacultyAllocation[]
 
   @@map("faculty")
 }
@@ -75,7 +77,8 @@ model Section {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  marks Mark[]
+  marks       Mark[]
+  allocations FacultyAllocation[]
 
   @@unique([sectionName, branch, academicYear, semester], name: "section_composite_unique")
   @@map("sections")
@@ -92,7 +95,8 @@ model Subject {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  marks Mark[]
+  marks       Mark[]
+  allocations FacultyAllocation[]
 
   @@unique([subjectCode, branch, semester], name: "subject_composite_unique")
   @@map("subjects")
@@ -160,3 +164,60 @@ model Mark {
   @@index([sectionId, subjectId, examId])
   @@map("marks")
 }
+
+// 8. Academic Years Table
+model AcademicYear {
+  id        String     @id @default(uuid())
+  year      String     @unique // e.g., "2025-2026", "2026-2027"
+  isCurrent Boolean    @default(false) @map("is_current")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  semesters Semester[]
+
+  @@map("academic_years")
+}
+
+// 9. Semesters Table
+model Semester {
+  id             String              @id @default(uuid())
+  academicYearId String              @map("academic_year_id")
+  academicYear   AcademicYear        @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  semesterNumber Int                 @map("semester_number") // 1 to 8
+  name           String              // e.g., "II B.Tech I Semester (Sem 3)"
+  isActive       Boolean             @default(false) @map("is_active")
+  startDate      DateTime?           @map("start_date")
+  endDate        DateTime?           @map("end_date")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  allocations    FacultyAllocation[]
+
+  @@unique([academicYearId, semesterNumber], name: "academic_year_semester_unique")
+  @@map("semesters")
+}
+
+// 10. Faculty Allocations Table (Semester-wise Subject & Section Assignment)
+model FacultyAllocation {
+  id             String    @id @default(uuid())
+  academicYear   String    @map("academic_year") // e.g. "2026-2027"
+  semesterNumber Int       @map("semester_number") // 1 to 8 (e.g. 3, 5, 7)
+  branch         String    // "CSIT", "CSD"
+  sectionId      String    @map("section_id")
+  section        Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  subjectId      String    @map("subject_id")
+  subject        Subject   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  facultyId      String    @map("faculty_id")
+  faculty        Faculty   @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  semesterId     String?   @map("semester_id")
+  semester       Semester? @relation(fields: [semesterId], references: [id], onDelete: SetNull)
+  isPrimary      Boolean   @default(true) @map("is_primary")
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@unique([sectionId, subjectId, facultyId], name: "section_subject_faculty_unique")
+  @@index([academicYear, semesterNumber, branch])
+  @@index([facultyId, isActive])
+  @@index([sectionId, isActive])
+  @@map("faculty_allocations")
+}
+

@@ -32,6 +32,26 @@ export const isLabCourse = (subjectCode?: string, subjectName?: string): boolean
   return labCodes.includes(code);
 };
 
+export const isOpenElectiveCourse = (subjectCode?: string, subjectName?: string): boolean => {
+  const code = (subjectCode || '').toUpperCase().trim();
+  const name = (subjectName || '').toLowerCase().trim();
+
+  if (code.includes('OE') || code.startsWith('B23OE')) {
+    return true;
+  }
+
+  if (
+    name.includes('open elective') ||
+    name.startsWith('oe-') ||
+    name.startsWith('oe ') ||
+    name.includes('(oe')
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
 export const facultyController = {
   // 1. Faculty Dashboard Overview Stats
   async getDashboardStats(req: Request, res: Response): Promise<void> {
@@ -43,13 +63,17 @@ export const facultyController = {
         facultyId: user?.username || 'FAC101',
       };
 
-      const totalStudents = await prisma.student.count();
-      const totalSections = await prisma.section.count();
+      const currentAy = await prisma.academicYear.findFirst({ where: { isCurrent: true } });
+      const activeAy = currentAy?.year || '2026-2027';
+
+      const totalStudents = await prisma.student.count({ where: { academicYear: activeAy } });
+      const totalSections = await prisma.section.count({ where: { academicYear: activeAy } });
       const totalSubjects = await prisma.subject.count();
       const totalMarksEntered = await prisma.mark.count();
 
       const sections = await prisma.section.findMany({
-        orderBy: [{ academicYear: 'desc' }, { semester: 'desc' }, { sectionName: 'asc' }],
+        where: { academicYear: activeAy },
+        orderBy: [{ semester: 'asc' }, { sectionName: 'asc' }],
       });
 
       // Count students per section
@@ -74,7 +98,7 @@ export const facultyController = {
         success: true,
         data: {
           faculty,
-          academicYear: '2025-2026',
+          academicYear: activeAy,
           stats: {
             totalStudents,
             totalSections,
@@ -90,11 +114,37 @@ export const facultyController = {
     }
   },
 
-  // 2. Get All Sections with Student Counts
+  // 2. Get All Sections with Student Counts (Filtered by Faculty Allocation for FACULTY)
   async getSections(req: Request, res: Response): Promise<void> {
     try {
+      const user = (req as any).user;
+      const currentAy = await prisma.academicYear.findFirst({ where: { isCurrent: true } });
+      const activeAy = currentAy?.year || '2026-2027';
+      let sectionWhere: any = { academicYear: activeAy };
+
+      if (user?.role === 'FACULTY') {
+        const facultyProfile = user.facultyProfile || await prisma.faculty.findUnique({
+          where: { userId: user.id },
+        });
+
+        if (facultyProfile) {
+          const allocations = await prisma.facultyAllocation.findMany({
+            where: {
+              facultyId: facultyProfile.id,
+              academicYear: activeAy,
+              isActive: true,
+            },
+            select: { sectionId: true },
+          });
+
+          const allocatedIds = Array.from(new Set(allocations.map((a) => a.sectionId)));
+          sectionWhere.id = { in: allocatedIds };
+        }
+      }
+
       const sections = await prisma.section.findMany({
-        orderBy: [{ academicYear: 'desc' }, { semester: 'desc' }, { sectionName: 'asc' }],
+        where: sectionWhere,
+        orderBy: [{ semester: 'asc' }, { sectionName: 'asc' }],
       });
 
       const sectionsWithCounts = await Promise.all(
@@ -121,14 +171,37 @@ export const facultyController = {
     }
   },
 
-  // 3. Get Subjects (Filter by branch and semester)
+  // 3. Get Subjects (Filter by branch, semester, sectionId & Faculty Allocation)
   async getSubjects(req: Request, res: Response): Promise<void> {
     try {
-      const { branch, semester } = req.query;
+      const user = (req as any).user;
+      const { branch, semester, sectionId } = req.query;
       const whereClause: any = {};
 
       if (branch) whereClause.branch = String(branch);
       if (semester) whereClause.semester = Number(semester);
+
+      if (user?.role === 'FACULTY') {
+        const facultyProfile = user.facultyProfile || await prisma.faculty.findUnique({
+          where: { userId: user.id },
+        });
+
+        if (facultyProfile) {
+          const allocWhere: any = {
+            facultyId: facultyProfile.id,
+            isActive: true,
+          };
+          if (sectionId) allocWhere.sectionId = String(sectionId);
+
+          const allocations = await prisma.facultyAllocation.findMany({
+            where: allocWhere,
+            select: { subjectId: true },
+          });
+
+          const allocatedSubjectIds = Array.from(new Set(allocations.map((a) => a.subjectId)));
+          whereClause.id = { in: allocatedSubjectIds };
+        }
+      }
 
       const subjects = await prisma.subject.findMany({
         where: whereClause,
@@ -138,6 +211,7 @@ export const facultyController = {
       const enrichedSubjects = subjects.map((sub) => ({
         ...sub,
         isLab: isLabCourse(sub.subjectCode, sub.subjectName),
+        isOpenElective: isOpenElectiveCourse(sub.subjectCode, sub.subjectName),
       }));
 
       res.status(200).json({ success: true, subjects: enrichedSubjects });
@@ -156,10 +230,40 @@ export const facultyController = {
       if (academicYear) whereClause.academicYear = String(academicYear);
       if (semester) whereClause.semester = Number(semester);
 
-      const exams = await prisma.exam.findMany({
+      let exams = await prisma.exam.findMany({
         where: whereClause,
         orderBy: [{ semester: 'asc' }, { examType: 'asc' }],
       });
+
+      // Self-healing: auto-seed standard exams if none exist for requested academicYear & semester
+      if (exams.length === 0 && academicYear && semester) {
+        const standardTypes = ['MID_1', 'MID_2', 'LAB_INTERNAL'] as const;
+        for (const et of standardTypes) {
+          try {
+            await prisma.exam.upsert({
+              where: {
+                exam_composite_unique: {
+                  examType: et,
+                  academicYear: String(academicYear),
+                  semester: Number(semester),
+                },
+              },
+              update: {},
+              create: {
+                examType: et,
+                academicYear: String(academicYear),
+                semester: Number(semester),
+              },
+            });
+          } catch (e) {
+            // Ignore duplicate key race condition
+          }
+        }
+        exams = await prisma.exam.findMany({
+          where: whereClause,
+          orderBy: [{ semester: 'asc' }, { examType: 'asc' }],
+        });
+      }
 
       res.status(200).json({ success: true, exams });
     } catch (error: any) {
@@ -198,7 +302,35 @@ export const facultyController = {
         where: { id: String(examId) },
       });
 
+      // Strict allocation check for FACULTY role
+      const user = (req as any).user;
+      if (user?.role === 'FACULTY') {
+        const facultyProfile = user.facultyProfile || await prisma.faculty.findUnique({
+          where: { userId: user.id },
+        });
+
+        if (facultyProfile) {
+          const isAllocated = await prisma.facultyAllocation.findFirst({
+            where: {
+              facultyId: facultyProfile.id,
+              sectionId: String(sectionId),
+              subjectId: String(subjectId),
+              isActive: true,
+            },
+          });
+
+          if (!isAllocated) {
+            res.status(403).json({
+              success: false,
+              message: 'Access denied. You are not allocated to teach this subject in this section.',
+            });
+            return;
+          }
+        }
+      }
+
       const isLab = subject ? isLabCourse(subject.subjectCode, subject.subjectName) : false;
+      const isOE = subject ? isOpenElectiveCourse(subject.subjectCode, subject.subjectName) : false;
 
       // Fetch all students enrolled in this section
       const students = await prisma.student.findMany({
@@ -235,6 +367,7 @@ export const facultyController = {
           name: stu.name,
           markId: mark ? mark.id : null,
           isLab,
+          isOpenElective: isOE,
           descriptiveQ1OrQ2: mark ? mark.descriptiveQ1OrQ2 : '',
           descriptiveQ3OrQ4: mark ? mark.descriptiveQ3OrQ4 : '',
           descriptiveQ5OrQ6: mark ? mark.descriptiveQ5OrQ6 : '',
@@ -254,6 +387,7 @@ export const facultyController = {
       res.status(200).json({
         success: true,
         isLab,
+        isOpenElective: isOE,
         section,
         subject,
         exam,
@@ -268,7 +402,7 @@ export const facultyController = {
   // 6. Bulk Save or Update Marks for a Section
   async saveSectionMarks(req: Request, res: Response): Promise<void> {
     try {
-      const { sectionId, subjectId, examId, marks } = req.body;
+      const { sectionId, subjectId, examId, marks, oeMode } = req.body;
       const user = (req as any).user;
       const facultyId = user?.facultyProfile?.id || null;
 
@@ -280,10 +414,123 @@ export const facultyController = {
         return;
       }
 
+      const section = await prisma.section.findUnique({
+        where: { id: String(sectionId) },
+      });
+
       const subject = await prisma.subject.findUnique({
         where: { id: String(subjectId) },
       });
+
+      // Strict allocation check for FACULTY role
+      if (user?.role === 'FACULTY') {
+        const facultyProfile = user.facultyProfile || await prisma.faculty.findUnique({
+          where: { userId: user.id },
+        });
+
+        if (facultyProfile) {
+          const isAllocated = await prisma.facultyAllocation.findFirst({
+            where: {
+              facultyId: facultyProfile.id,
+              sectionId: String(sectionId),
+              subjectId: String(subjectId),
+              isActive: true,
+            },
+          });
+
+          if (!isAllocated) {
+            res.status(403).json({
+              success: false,
+              message: 'Access denied. You are not allocated to enter marks for this subject and section.',
+            });
+            return;
+          }
+        }
+      }
+
       const isLab = subject ? isLabCourse(subject.subjectCode, subject.subjectName) : false;
+      const isOE = subject ? isOpenElectiveCourse(subject.subjectCode, subject.subjectName) : false;
+
+      // Special handling: If Direct Total Sessional is selected for an Open Elective,
+      // save to both MID_1 and MID_2 so the 80:20 formula directly calculates the exact sessional mark.
+      if (isOE && oeMode === 'SESSIONAL' && section) {
+        const mid1Exam = await prisma.exam.findFirst({
+          where: { examType: 'MID_1', semester: section.semester, academicYear: section.academicYear },
+        });
+        const mid2Exam = await prisma.exam.findFirst({
+          where: { examType: 'MID_2', semester: section.semester, academicYear: section.academicYear },
+        });
+
+        const results = [];
+        for (const item of marks) {
+          const rawTotal = item.total !== undefined && item.total !== '' 
+            ? parseFloat(item.total) 
+            : (parseFloat(item.assignmentMarks) || 0);
+          const grandTotal = Math.min(30, Math.max(0, isNaN(rawTotal) ? 0 : rawTotal));
+
+          if (mid1Exam) {
+            await prisma.mark.upsert({
+              where: {
+                student_subject_exam_unique: {
+                  studentId: item.studentId,
+                  subjectId: String(subjectId),
+                  examId: mid1Exam.id,
+                },
+              },
+              update: {
+                facultyId,
+                sectionId: String(sectionId),
+                total: grandTotal,
+                assignmentMarks: grandTotal,
+              },
+              create: {
+                studentId: item.studentId,
+                facultyId,
+                subjectId: String(subjectId),
+                sectionId: String(sectionId),
+                examId: mid1Exam.id,
+                total: grandTotal,
+                assignmentMarks: grandTotal,
+              },
+            });
+          }
+
+          if (mid2Exam) {
+            const savedMid2 = await prisma.mark.upsert({
+              where: {
+                student_subject_exam_unique: {
+                  studentId: item.studentId,
+                  subjectId: String(subjectId),
+                  examId: mid2Exam.id,
+                },
+              },
+              update: {
+                facultyId,
+                sectionId: String(sectionId),
+                total: grandTotal,
+                assignmentMarks: grandTotal,
+              },
+              create: {
+                studentId: item.studentId,
+                facultyId,
+                subjectId: String(subjectId),
+                sectionId: String(sectionId),
+                examId: mid2Exam.id,
+                total: grandTotal,
+                assignmentMarks: grandTotal,
+              },
+            });
+            results.push(savedMid2);
+          }
+        }
+
+        res.status(200).json({
+          success: true,
+          message: `Successfully saved direct total sessional marks for ${results.length} students.`,
+          count: results.length,
+        });
+        return;
+      }
 
       const results = [];
 
@@ -301,8 +548,8 @@ export const facultyController = {
         let assign = 0;
         let grandTotal = 0;
 
-        if (isLab) {
-          // For Labs: single internal score (Max 30)
+        if (isLab || isOE || oeMode === 'MID_1' || oeMode === 'MID_2') {
+          // Direct score (Max 30) for Lab or Open Elective direct modes
           const rawTotal = item.total !== undefined && item.total !== '' 
             ? parseFloat(item.total) 
             : (parseFloat(item.assignmentMarks) || 0);
@@ -412,6 +659,7 @@ export const facultyController = {
       });
 
       const isLab = subject ? isLabCourse(subject.subjectCode, subject.subjectName) : false;
+      const isOE = subject ? isOpenElectiveCourse(subject.subjectCode, subject.subjectName) : false;
 
       // Find exams for this semester & academic year
       const mid1Exam = await prisma.exam.findFirst({
@@ -565,6 +813,7 @@ export const facultyController = {
       res.status(200).json({
         success: true,
         isLab,
+        isOpenElective: isOE,
         section,
         subject,
         sessionals,
@@ -627,6 +876,7 @@ export const facultyController = {
       const enrichedSubjects = subjects.map((sub) => ({
         ...sub,
         isLab: isLabCourse(sub.subjectCode, sub.subjectName),
+        isOpenElective: isOpenElectiveCourse(sub.subjectCode, sub.subjectName),
       }));
 
       const subjectIds = enrichedSubjects.map((s) => s.id);

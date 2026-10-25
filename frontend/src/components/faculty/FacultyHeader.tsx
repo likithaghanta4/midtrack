@@ -75,6 +75,7 @@ export const FacultyHeader: React.FC<FacultyHeaderProps> = ({
 
           {/* Logout Button */}
           <button
+            id="btn-faculty-logout"
             onClick={onLogout}
             title="Sign Out"
             className="flex items-center gap-1.5 bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all border border-slate-200 hover:border-red-200 shadow-2xs"
@@ -90,6 +91,7 @@ export const FacultyHeader: React.FC<FacultyHeaderProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 sm:gap-2 overflow-x-auto scrollbar-none py-2">
           {/* Tab 1: Overview */}
           <button
+            id="tab-faculty-overview"
             onClick={() => onSelectTab('OVERVIEW')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
               activeTab === 'OVERVIEW'
@@ -103,6 +105,7 @@ export const FacultyHeader: React.FC<FacultyHeaderProps> = ({
 
           {/* Tab 2: Enter Mid Marks */}
           <button
+            id="tab-faculty-enter-marks"
             onClick={() => onSelectTab('ENTER_MARKS')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
               activeTab === 'ENTER_MARKS'
@@ -116,6 +119,7 @@ export const FacultyHeader: React.FC<FacultyHeaderProps> = ({
 
           {/* Tab 3: View Analytics */}
           <button
+            id="tab-faculty-analytics"
             onClick={() => onSelectTab('ANALYTICS')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
               activeTab === 'ANALYTICS'
@@ -129,6 +133,7 @@ export const FacultyHeader: React.FC<FacultyHeaderProps> = ({
 
           {/* Tab 4: Sessional Calculation */}
           <button
+            id="tab-faculty-sessional"
             onClick={() => onSelectTab('SESSIONALS')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
               activeTab === 'SESSIONALS'
@@ -142,6 +147,7 @@ export const FacultyHeader: React.FC<FacultyHeaderProps> = ({
 
           {/* Tab 5: Print Mark Sheets */}
           <button
+            id="tab-faculty-print"
             onClick={() => onSelectTab('PRINT_SHEET')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${
               activeTab === 'PRINT_SHEET'

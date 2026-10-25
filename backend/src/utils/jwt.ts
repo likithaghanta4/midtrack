@@ -4,7 +4,7 @@ import { config } from '../config';
 export interface TokenPayload {
   userId: string;
   username: string;
-  role: 'FACULTY' | 'STUDENT';
+  role: 'SUPERADMIN' | 'FACULTY' | 'STUDENT';
 }
 
 export const signToken = (payload: TokenPayload): string => {

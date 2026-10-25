@@ -48,14 +48,53 @@ export const getStudentDashboard = async (
 
     const activeSemester = req.query.semester ? Number(req.query.semester) : student.semester;
 
-    // 2. Fetch all subjects for student's branch & semester
-    const subjects = await prisma.subject.findMany({
+    // 1. Fetch current active academic year
+    const currentAy = await prisma.academicYear.findFirst({ where: { isCurrent: true } });
+    const activeAy = currentAy?.year || '2026-2027';
+
+    // 2. Fetch subjects for student's exact section based on active faculty allocations
+    const section = await prisma.section.findFirst({
       where: {
-        branch: student.branch,
+        academicYear: activeAy,
         semester: activeSemester,
+        branch: student.branch,
+        sectionName: student.section,
       },
-      orderBy: { subjectCode: 'asc' },
     });
+
+    let subjects: any[] = [];
+    if (section) {
+      const allocations = await prisma.facultyAllocation.findMany({
+        where: {
+          sectionId: section.id,
+          semesterNumber: activeSemester,
+          academicYear: activeAy,
+          isActive: true,
+        },
+        include: { subject: true },
+      });
+
+      const uniqueSubjectMap = new Map<string, any>();
+      for (const a of allocations) {
+        if (a.subject && !uniqueSubjectMap.has(a.subject.id)) {
+          uniqueSubjectMap.set(a.subject.id, a.subject);
+        }
+      }
+      subjects = Array.from(uniqueSubjectMap.values()).sort((a, b) =>
+        a.subjectCode.localeCompare(b.subjectCode)
+      );
+    }
+
+    // Fallback if no specific section allocations exist
+    if (subjects.length === 0) {
+      subjects = await prisma.subject.findMany({
+        where: {
+          branch: student.branch,
+          semester: activeSemester,
+        },
+        orderBy: { subjectCode: 'asc' },
+      });
+    }
 
     // 3. Fetch all marks entered for this student
     const studentMarks = await prisma.mark.findMany({
